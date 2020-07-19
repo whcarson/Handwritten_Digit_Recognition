@@ -21,12 +21,11 @@ def transform(image):
     image = ImageEnhance.Contrast(image).enhance(2)
     image_arr = np.array(image)
     image_arr = binarize(image_arr)
-    image = Image.fromarray(image_arr)
-    image.show()
     return image_arr
 
 
-def predict_num(image, _model):
+def predict_num(image_file, _model):
+    image = Image.open("IMG_0922.jpg")
     return find_max(_model.predict(transform(image).reshape(1, 28, 28)))
 
 
@@ -39,12 +38,13 @@ def show_data(stop):
 def find_max(arr):
     max_num = 0
     max_index = 0
+    dct = {}
     for index, value in enumerate(arr[0]):
-        print(index, value)
+        dct[index] = value
         if value > max_num:
             max_num = value
             max_index = index
-    return max_index
+    return dct, max_index
 
 
 def binarize(arr):
@@ -54,25 +54,32 @@ def binarize(arr):
     return arr
 
 
-if __name__ == "__main__":
-    im = Image.open("IMG_0922.jpg")
-    # print(transform(im))
-    transform(im)
-    # model = Sequential([
-    #     Flatten(input_shape=(28, 28)),
-    #     Dense(128, activation='relu', use_bias=True),
-    #     Dense(10, activation='softmax')
-    # ])
-
-    model = load_model("MNIST model1")
+def fit_model():
+    model = Sequential([
+        Flatten(input_shape=(28, 28)),
+        Dense(128, activation='relu', use_bias=True),
+        Dense(10, activation='softmax')
+    ])
 
     model.compile(
         loss='sparse_categorical_crossentropy',
         optimizer=tf.keras.optimizers.Adam(0.001),
         metrics=['accuracy'],
     )
+    model.fit(x_train, y_train, epochs=5, validation_data=(x_test, y_test))
+    model.save("MNIST model1")
 
-    # model.fit(x_train, y_train, epochs=5, validation_data=(x_test, y_test))
-    # model.save("MNIST model1")
-    print(predict_num(im, model))
-    # show_data(10)
+
+def load_compile(filename="MNIST model1"):
+    model = load_model(filename)
+
+    model.compile(
+        loss='sparse_categorical_crossentropy',
+        optimizer=tf.keras.optimizers.Adam(0.001),
+        metrics=['accuracy'],
+    )
+    return model
+
+
+if __name__ == "__main__":
+    print(predict_num("IMG_0922.jpg", load_compile()))
